@@ -19,11 +19,13 @@ solution.plot()
 
 ![Screenshot](example_solution.svg)
 
+## Jupyter notebook
+
+There is a [Jupyter notebook](description.ipynb) describing the game and algorithm, which can be run directly in a web browser using services such as Binder. [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/johnrudge/genius_star/HEAD?labpath=description.ipynb)
 
 ## License
 
 This software is licenced under the GNU Lesser General Public License v3.0.
-
 
 ## Author
 
