@@ -69,6 +69,7 @@ class Board:
                 )
         plt.axis("off")
         plt.axis("square")
+        plt.gcf().tight_layout()
 
 
 class Dice:
@@ -151,7 +152,7 @@ class Piece:
         """Plot a piece for a given orientation and translation"""
         trigs = self.triangles(perm_idx, shift=shift)
         plot_block(trigs, self.col)
-        plt.axis("square")
+        plt.axis("equal")
         plt.axis("off")
 
     def plot_all(self):
@@ -202,11 +203,19 @@ class Pieces(list):
 
         [self.append(Piece(p, c)) for p, c in zip(pieces, colors)]
 
-    def plot(self):
-        """Plot all the pieces, in all possible orientations"""
+    def plot(self, all_orientations=False):
+        """Plot all the pieces"""
+        if all_orientations:
+            fig = plt.figure(figsize=(12, 8))
+        else:
+            fig = plt.figure(figsize=(12, 2))
         for j, p in enumerate(self):
-            for i in range(p.n_perms()):
-                p.plot(i, shift=(6 * i, -4 * j, +4 * j))
+            if all_orientations:
+                for i in range(p.n_perms()):
+                    p.plot(i, shift=(6 * i, -4 * j, +4 * j))
+            else:
+                p.plot(0, shift=(0, -4 * j, +4 * j))
+        fig.tight_layout()
 
 
 class Game:
