@@ -311,10 +311,9 @@ class Solution:
             plot_block([t], "white", symbol=True)
 
         for s in self.solution:
-            piece_idx = s[0]
+            piece_idx, trigs = s[0], s[3]
             col = self.game.pieces[piece_idx].col
-            trigs = s[3]
-            plot_block(s[3], col)
+            plot_block(trigs, col)
         plt.gcf().tight_layout()
 
         if show:
