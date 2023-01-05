@@ -77,19 +77,20 @@ class Dice:
 
     def __init__(self):
         self.dice_numbers = [
-            [12, 13, 23, 24, 32, 33, 41, 42],
-            [10, 27, 31],
-            [2, 4, 7, 8, 9, 11, 16, 17],
             [1, 5, 15, 34, 44, 48],
+            [2, 4, 7, 8, 9, 11, 16, 17],
+            [10, 27, 31],
+            [12, 13, 23, 24, 32, 33, 41, 42],
+            [18, 22, 39],
             [19, 20, 21, 28, 29, 30],
             [25, 26, 36, 37, 38, 40, 45, 47],
-            [18, 22, 39],
         ]
 
-    def roll(self):
+    def roll(self, sort=True):
         """A random roll of the dice"""
         r = [random.sample(n, 1)[0] for n in self.dice_numbers]
-        r.sort()
+        if sort:
+            r.sort()
         return r
 
     def all_rolls(self):
@@ -321,3 +322,57 @@ class Solution:
 
     def solved(self):
         return len(self.solution) > 0
+
+
+class Roll:
+    """Simple class for storing the current dice roll"""
+
+    def __init__(self, initial_roll):
+        self.assign(initial_roll)
+
+    def assign(self, roll):
+        for i, r in enumerate(roll):
+            setattr(self, "dice" + str(i), r)
+        self.n_dice = len(roll)
+
+    def as_list(self):
+        return [getattr(self, "dice" + str(i)) for i in range(self.n_dice)]
+
+
+def gui(run=True):
+    """Very simple web-based GUI for the Genius Star Solver"""
+
+    from nicegui import ui
+
+    @ui.page("/", title="The Genius Star Solver")
+    async def page():
+        dice = Dice()
+        game = Game()
+        roll = Roll(dice.roll(sort=False))
+
+        fig = ui.plot(figsize=(3.4, 3.4))
+        fig.classes("max-w-xs")
+
+        def update():
+            with fig:
+                game.new_roll(roll.as_list())
+                solution = game.solve()
+                plt.gca().clear()
+                solution.plot(show=False)
+
+        update()
+
+        for j, dn in enumerate(dice.dice_numbers):
+            d = {x: str(x) for x in dn}
+            tog = ui.toggle(d, on_change=update)
+            tog.classes("max-w-xs")
+            tog.bind_value(roll, "dice" + str(j))
+            tog.props("padding=x xs")
+
+        ui.link(
+            "The Genius Star Solver on GitHub",
+            "https://github.com/johnrudge/genius_star",
+        )
+
+    if run:
+        ui.run()
