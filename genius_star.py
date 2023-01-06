@@ -69,7 +69,7 @@ class Board:
                 )
         plt.axis("off")
         plt.axis("square")
-        plt.gcf().tight_layout()
+        # plt.gcf().tight_layout()
 
 
 class Dice:
@@ -315,7 +315,9 @@ class Solution:
             piece_idx, trigs = s[0], s[3]
             col = self.game.pieces[piece_idx].col
             plot_block(trigs, col)
-        plt.gcf().tight_layout()
+        # plt.gcf().tight_layout()
+        plt.subplots_adjust(left=0.0, right=1.0, top=1.0, bottom=0.0)
+        plt.xlim((-5.25, 5.25))
 
         if show:
             plt.show()
@@ -345,34 +347,40 @@ def gui(run=True):
     from nicegui import ui
 
     @ui.page("/", title="The Genius Star Solver")
-    async def page():
-        dice = Dice()
-        game = Game()
-        roll = Roll(dice.roll(sort=False))
+    def page():
 
-        fig = ui.plot(figsize=(3.4, 3.4))
-        fig.classes("max-w-xs")
-
-        def update():
-            with fig:
-                game.new_roll(roll.as_list())
-                solution = game.solve()
-                plt.gca().clear()
-                solution.plot(show=False)
-
-        update()
-
-        for j, dn in enumerate(dice.dice_numbers):
-            d = {x: str(x) for x in dn}
-            tog = ui.toggle(d, on_change=update)
-            tog.classes("max-w-xs")
-            tog.bind_value(roll, "dice" + str(j))
-            tog.props("padding=x xs")
-
-        ui.link(
-            "The Genius Star Solver on GitHub",
-            "https://github.com/johnrudge/genius_star",
+        ui.add_head_html(
+            """<meta name="viewport" content="width=device-width, initial-scale=1" />"""
         )
+
+        with ui.column().classes("items-center"):
+            dice = Dice()
+            game = Game()
+            roll = Roll(dice.roll(sort=False))
+
+            fig = ui.plot(figsize=(3.0, 3.0))
+            fig.classes("max-w-xs")
+
+            def update():
+                with fig:
+                    game.new_roll(roll.as_list())
+                    solution = game.solve()
+                    plt.gca().clear()
+                    solution.plot(show=False)
+
+            update()
+
+            for j, dn in enumerate(dice.dice_numbers):
+                d = {x: str(x) for x in dn}
+                tog = ui.toggle(d, on_change=update)
+                tog.classes("max-w-xs")
+                tog.bind_value(roll, "dice" + str(j))
+                tog.props("padding=x xs")
+
+            ui.link(
+                "The Genius Star Solver on GitHub",
+                "https://github.com/johnrudge/genius_star",
+            )
 
     if run:
         ui.run()
