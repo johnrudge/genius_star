@@ -350,7 +350,10 @@ def gui(run=True):
     def page():
 
         ui.add_head_html(
-            """<meta name="viewport" content="width=device-width, initial-scale=1" />"""
+            """
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <meta name="mobile-web-app-capable" content="yes">
+            """
         )
 
         with ui.column().classes("items-center"):
