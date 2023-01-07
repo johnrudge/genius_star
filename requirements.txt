@@ -2,4 +2,5 @@
 numpy
 matplotlib
 exact-cover
+nicegui
 

@@ -353,6 +353,8 @@ def gui(run=True):
             """
             <meta name="viewport" content="width=device-width, initial-scale=1" />
             <meta name="mobile-web-app-capable" content="yes">
+            <meta name="description" content="Solver for The Genius Star Puzzle made by the Happy Puzzle Company" />
+            <meta name="author" content="John F. Rudge" />
             """
         )
 
