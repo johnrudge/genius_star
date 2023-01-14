@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import exact_cover as ec
+from exact_cover.io import DTYPE_FOR_ARRAY
 
 # Unit vectors for the triangular grid
 a = np.array([0.0, -1.0])
@@ -268,7 +269,7 @@ class Game:
         """The incidence matrix corresponding to the fits f"""
         nrows = len(f)
         ncols = len(self.triangles) + len(self.pieces)
-        m = np.zeros((nrows, ncols), dtype="int32")
+        m = np.zeros((nrows, ncols), dtype=DTYPE_FOR_ARRAY)
         for i, x in enumerate(f):
             # here j refers to the piece
             j = len(self.triangles) + x[0]
