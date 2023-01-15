@@ -279,6 +279,13 @@ class Game:
                 m[i, j] = 1
         return m
 
+    def plot_matrix(self):
+        """Show the incidence matrix"""
+        f = self.fits()
+        m = self.matrix(f)
+        fig = plt.figure(figsize=(5, 8))
+        plt.spy(m, aspect="auto")
+
     def solve(self):
         """Solve game using an exact cover problem solver"""
         f = self.fits()
