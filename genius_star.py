@@ -1,9 +1,10 @@
 from itertools import product, permutations
+import random
 import matplotlib.pyplot as plt
 import numpy as np
-import random
 import exact_cover as ec
 from exact_cover.io import DTYPE_FOR_ARRAY
+
 
 # Unit vectors for the triangular grid
 a = np.array([0.0, -1.0])
@@ -58,6 +59,7 @@ class Board:
             or (t[0] >= 2 and t[1] >= 2 and t[2] >= 2)
         ]
         self.triangles.sort(key=lambda i: (i[0], -i[1], i[2]))
+        self.trig_dict = {t: i for i, t in enumerate(self.triangles)}
 
     def plot(self, numbers=True):
         for i, t in enumerate(self.triangles):
@@ -70,7 +72,47 @@ class Board:
                 )
         plt.axis("off")
         plt.axis("square")
-        # plt.gcf().tight_layout()
+        plt.subplots_adjust(left=0.0, right=1.0, top=1.0, bottom=0.0)
+        plt.xlim((-5.25, 5.25))
+
+    def fits(self, pieces):
+        """Work out where each piece can fit on the board"""
+
+        # work out the possible translation vectors for putting pieces on the board
+        shifts = []
+        for t in self.triangles:
+            if sum(t) == 10:
+                shifts.append(t)
+            if sum(t) == 11:
+                shifts.append((t[0] - 1, t[1], t[2]))
+        shifts = list(set(shifts))
+
+        f = []
+        for piece_idx, p in enumerate(pieces):
+            for perm_idx in range(len(p.all_triangles)):
+                for shift in shifts:
+                    trigs = set(p.triangles(perm_idx, shift))
+                    d = trigs.difference(self.triangles)
+                    if len(d) == 0:
+                        trig_idxs = [self.trig_dict[t] for t in trigs]
+                        f.append((piece_idx, trig_idxs, perm_idx, trigs))
+        return f
+
+    def matrix(self, fits, pieces):
+        nrows = len(fits)
+        ncols = len(self.triangles) + len(pieces)
+        m = np.zeros((nrows, ncols), dtype=DTYPE_FOR_ARRAY)
+        for i, x in enumerate(fits):
+            # here j refers to the piece
+            j = len(self.triangles) + x[0]
+            m[i, j] = 1
+            for j in x[1]:
+                # here j refers to the triangle
+                m[i, j] = 1
+        return m
+
+    def covered(self, matrix):
+        return [set(np.nonzero(matrix[:, i])[0]) for i, t in enumerate(self.triangles)]
 
 
 class Dice:
@@ -102,8 +144,8 @@ class Dice:
 class Piece:
     """Pieces described by a collection of triangles and a colour"""
 
-    def __init__(self, trigs, col):
-        self.original_triangles = trigs
+    def __init__(self, triangles, col):
+        self.original_triangles = triangles
         self.col = col
 
         # Look at all rotations / reflections of piece
@@ -228,14 +270,16 @@ class Game:
         self.original_pieces = Pieces(star=False)
         self.star_pieces = Pieces(star=True)
 
-        # work out the possible translation vectors for putting pieces on the board
-        self.shifts = []
-        for t in self.board.triangles:
-            if sum(t) == 10:
-                self.shifts.append(t)
-            if sum(t) == 11:
-                self.shifts.append((t[0] - 1, t[1], t[2]))
-        self.shifts = list(set(self.shifts))
+        self.original_fits = self.board.fits(self.original_pieces)
+        self.star_fits = self.board.fits(self.star_pieces)
+
+        self.original_matrix = self.board.matrix(
+            self.original_fits, self.original_pieces
+        )
+        self.star_matrix = self.board.matrix(self.star_fits, self.star_pieces)
+
+        self.original_covered = self.board.covered(self.original_matrix)
+        self.star_covered = self.board.covered(self.star_matrix)
 
         if roll:
             self.new_roll(roll, star=star)
@@ -246,50 +290,42 @@ class Game:
         self.star = star
         if star:
             self.pieces = self.star_pieces
+            self.fits = self.star_fits
+            self.matrix = self.star_matrix
+            self.covered = self.star_covered
         else:
             self.pieces = self.original_pieces
-        self.blocked_triangles = set([self.board.triangles[i - 1] for i in roll])
-        self.triangles = set(self.board.triangles).difference(self.blocked_triangles)
-        self.trig_dict = {t: i for i, t in enumerate(self.triangles)}
+            self.fits = self.original_fits
+            self.matrix = self.original_matrix
+            self.covered = self.original_covered
 
-    def fits(self):
-        """Work out where each piece can fit on the board"""
-        f = []
-        for piece_idx, p in enumerate(self.pieces):
-            for perm_idx in range(len(p.all_triangles)):
-                for shift in self.shifts:
-                    trigs = set(p.triangles(perm_idx, shift))
-                    d = trigs.difference(self.triangles)
-                    if len(d) == 0:
-                        trig_idxs = [self.trig_dict[t] for t in trigs]
-                        f.append((piece_idx, trig_idxs, perm_idx, trigs))
-        return f
+    def masks(self):
+        killer_set = set.union(*[self.covered[i - 1] for i in self.roll])
+        row_mask = np.zeros(self.matrix.shape[0], dtype=bool)
+        row_mask[list(killer_set)] = True
 
-    def matrix(self, f):
+        col_mask = np.zeros(self.matrix.shape[1], dtype=bool)
+        col_mask[np.array(self.roll) - 1] = True
+        return ~row_mask, ~col_mask
+
+    def incidence_matrix(self):
         """The incidence matrix corresponding to the fits f"""
-        nrows = len(f)
-        ncols = len(self.triangles) + len(self.pieces)
-        m = np.zeros((nrows, ncols), dtype=DTYPE_FOR_ARRAY)
-        for i, x in enumerate(f):
-            # here j refers to the piece
-            j = len(self.triangles) + x[0]
-            m[i, j] = 1
-            for j in x[1]:
-                # here j refers to the triangle
-                m[i, j] = 1
-        return m
+        row_mask, col_mask = self.masks()
+
+        ixgrid = np.ix_(row_mask, col_mask)
+        return self.matrix[ixgrid]
 
     def plot_matrix(self):
         """Show the incidence matrix"""
-        f = self.fits()
-        m = self.matrix(f)
-        fig = plt.figure(figsize=(5, 8))
+        m = self.incidence_matrix()
+        plt.figure(figsize=(5, 8))
         plt.spy(m, aspect="auto")
 
     def solve(self):
         """Solve game using an exact cover problem solver"""
-        f = self.fits()
-        m = self.matrix(f)
+        m = self.incidence_matrix()
+        row_mask, _ = self.masks()
+        sub = np.nonzero(row_mask)[0]
         try:
             sol = ec.get_exact_cover(m)
         except ec.error.NoSolution:
@@ -297,11 +333,10 @@ class Game:
                 # no star solution, try solving without star
                 self.new_roll(self.roll, star=False)
                 return self.solve()
-            else:
-                # no solution
-                raise ec.error.NoSolution
+            # no solution
+            raise ec.error.NoSolution
             return Solution([], self)
-        solution = Solution([f[i] for i in sol], self)
+        solution = Solution([sub[i] for i in sol], self)
 
         return solution
 
@@ -316,16 +351,15 @@ class Solution:
     def plot(self, show=True):
         self.game.board.plot(numbers=False)
 
-        for t in self.game.blocked_triangles:
+        blocked_triangles = [self.game.board.triangles[i - 1] for i in self.game.roll]
+        for t in blocked_triangles:
             plot_block([t], "white", symbol=True)
 
         for s in self.solution:
-            piece_idx, trigs = s[0], s[3]
+            f = self.game.fits[s]
+            piece_idx, trigs = f[0], f[3]
             col = self.game.pieces[piece_idx].col
             plot_block(trigs, col)
-        # plt.gcf().tight_layout()
-        plt.subplots_adjust(left=0.0, right=1.0, top=1.0, bottom=0.0)
-        plt.xlim((-5.25, 5.25))
 
         if show:
             plt.show()
@@ -351,7 +385,6 @@ class Roll:
 
 def gui(run=True):
     """Very simple web-based GUI for the Genius Star Solver"""
-
     from nicegui import ui
 
     @ui.page("/", title="The Genius Star Solver")
