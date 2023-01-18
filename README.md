@@ -34,6 +34,9 @@ python3 gui.py
 ```
 or by visiting [https://geniusstar.johnrudge.com](https://geniusstar.johnrudge.com).
 
+## All solutions
+
+`solve_all.py` performs an exhaustive search of all 165,888 possible puzzles. It take around 10 minutes to run, and shows that 97,422 of the combinations can be solved with a star (58.7%, slightly higher than the manufacturer's quoted figure of 57.4%). 
       
 ## License
 
