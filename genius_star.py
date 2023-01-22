@@ -60,6 +60,8 @@ class Board:
         ]
         self.triangles.sort(key=lambda i: (i[0], -i[1], i[2]))
         self.trig_dict = {t: i for i, t in enumerate(self.triangles)}
+        self.point_group = PointGroup(shift=(3, 4, 3))
+        self.calculate_equivalence()
 
     def plot(self, numbers=True):
         for i, t in enumerate(self.triangles):
@@ -114,6 +116,56 @@ class Board:
     def covered(self, matrix):
         return [set(np.nonzero(matrix[:, i])[0]) for i, t in enumerate(self.triangles)]
 
+    def calculate_equivalence(self):
+        """matrix giving positions equivalent under point group"""
+        trig_dict = {t: i for i, t in enumerate(self.triangles)}
+
+        equi = np.empty((48, 12), dtype=int)
+        for i, t in enumerate(self.triangles):
+            ts = self.point_group.apply_all(t)
+            equi[i, :] = [trig_dict[c] for c in ts]
+        self.equivalence = equi
+
+    def equivalent_rolls(self, roll):
+        """Return a set of dice rolls that are equivalent under point group"""
+        idxs = np.array(roll) - 1
+        x = self.equivalence[idxs, :] + 1
+        rolls = x.T.tolist()
+        [r.sort() for r in rolls]
+        return rolls
+
+
+class PointGroup:
+    """The point group symmetry of the triangular grid.
+    (Dihedral(6), symmetries of a hexagon)"""
+
+    def __init__(self, shift=(0, 0, 0)):
+        self.shift = shift
+
+        # matrix representing rotation by 60 degrees
+        r = np.array(
+            [[0, -1, 0, 0], [0, 0, -1, 0], [-1, 0, 0, 1], [0, 0, 0, 1]], dtype=int
+        )
+        # matrix representing reflection in `a` direction
+        m = np.array(
+            [[-1, 0, 0, 1], [0, 0, -1, 0], [0, -1, 0, 0], [0, 0, 0, 1]], dtype=int
+        )
+        self.generators = [r, m]
+        rotations = [np.linalg.matrix_power(r, n) for n in range(6)]
+        reflections = [m @ x for x in rotations]
+        self.elements = rotations + reflections
+
+    def apply(self, t, idx):
+        """Apply the symmetry element idx to triangle t"""
+        s = self.shift
+        v = np.array([t[0] - s[0], t[1] - s[1], t[2] - s[2], 1], dtype=int)
+        x = np.dot(self.elements[idx], v)
+        return (x[0] + s[0], x[1] + s[1], x[2] + s[2])
+
+    def apply_all(self, t):
+        """Apply all the group symmetry elements to triangle t"""
+        return [self.apply(t, idx) for idx in range(12)]
+
 
 class Dice:
     """The seven genius star dice"""
@@ -139,6 +191,19 @@ class Dice:
     def all_rolls(self):
         """Iterable giving all possible rolls"""
         return product(*self.dice_numbers)
+
+    def rollable(self, roll):
+        """Check if roll is possible with dice"""
+        rollable = True
+        current_roll = list(roll)
+        for d in self.dice_numbers:
+            i = set(current_roll).intersection(set(d))
+            if len(i) != 1:
+                # must have one number on each dice
+                rollable = False
+                break
+            current_roll.remove(i.pop())
+        return rollable
 
 
 class Piece:
