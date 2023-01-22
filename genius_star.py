@@ -134,6 +134,12 @@ class Board:
         [r.sort() for r in rolls]
         return rolls
 
+    def equivalent_roll(self, roll):
+        """Return the first of the set of rolls equivalent under point group"""
+        b = self.equivalent_rolls(roll)
+        b.sort()
+        return b[0]
+
 
 class PointGroup:
     """The point group symmetry of the triangular grid.
