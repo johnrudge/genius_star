@@ -433,6 +433,16 @@ class Game:
             not_solved = False
         return self.roll
 
+    def plot(self, show=True, numbers=True):
+        self.board.plot(numbers=numbers)
+
+        blocked_triangles = [self.board.triangles[i - 1] for i in self.roll]
+        for t in blocked_triangles:
+            plot_block([t], "white", symbol=True)
+
+        if show:
+            plt.show()
+
 
 class Solution:
     """A solved game"""
@@ -442,11 +452,7 @@ class Solution:
         self.game = game
 
     def plot(self, show=True):
-        self.game.board.plot(numbers=False)
-
-        blocked_triangles = [self.game.board.triangles[i - 1] for i in self.game.roll]
-        for t in blocked_triangles:
-            plot_block([t], "white", symbol=True)
+        self.game.plot(numbers=False, show=False)
 
         for s in self.solution:
             f = self.game.fits[s]
