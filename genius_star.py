@@ -337,6 +337,7 @@ class Game:
     """The genius star game"""
 
     def __init__(self, roll=None, star=True):
+        self.dice = Dice()
         self.board = Board()
         self.original_pieces = Pieces(star=False)
         self.star_pieces = Pieces(star=True)
@@ -410,6 +411,27 @@ class Game:
         solution = Solution([sub[i] for i in sol], self)
 
         return solution
+
+    def random(self, star=True, rollable=False):
+        """Generate a random solvable puzzle"""
+        not_solved = True
+        while not_solved:
+            if rollable == True:
+                roll = self.dice.roll()
+            else:
+                roll = random.sample(range(1, 49), k=7)
+                roll.sort()
+            self.new_roll(roll)
+            try:
+                solution = self.solve()
+            except ec.error.NoSolution:
+                continue
+            if star and not self.star:
+                continue
+            if self.star and not star:
+                continue
+            not_solved = False
+        return self.roll
 
 
 class Solution:
