@@ -1,10 +1,8 @@
-from itertools import product, permutations
+from itertools import product
 import random
 import matplotlib.pyplot as plt
 import numpy as np
 import exact_cover as ec
-from exact_cover.io import DTYPE_FOR_ARRAY
-
 
 # Unit vectors for the triangular grid
 a = np.array([0.0, -1.0])
@@ -62,6 +60,7 @@ class Board:
         self.trig_dict = {t: i for i, t in enumerate(self.triangles)}
         self.point_group = PointGroup(shift=(3, 4, 3))
         self.calculate_equivalence()
+        self.calculate_shifts()
 
     def plot(self, numbers=True):
         for i, t in enumerate(self.triangles):
@@ -77,22 +76,22 @@ class Board:
         plt.subplots_adjust(left=0.0, right=1.0, top=1.0, bottom=0.0)
         plt.xlim((-5.25, 5.25))
 
-    def fits(self, pieces):
-        """Work out where each piece can fit on the board"""
-
-        # work out the possible translation vectors for putting pieces on the board
+    def calculate_shifts(self):
+        """Work out the possible translation vectors for putting pieces on the board"""
         shifts = []
         for t in self.triangles:
             if sum(t) == 10:
                 shifts.append(t)
             if sum(t) == 11:
                 shifts.append((t[0] - 1, t[1], t[2]))
-        shifts = list(set(shifts))
+        self.shifts = list(set(shifts))
 
+    def fits(self, pieces):
+        """Work out where each piece can fit on the board"""
         f = []
         for piece_idx, p in enumerate(pieces):
             for perm_idx in range(len(p.all_triangles)):
-                for shift in shifts:
+                for shift in self.shifts:
                     trigs = set(p.triangles(perm_idx, shift))
                     d = trigs.difference(self.triangles)
                     if len(d) == 0:
@@ -103,7 +102,7 @@ class Board:
     def matrix(self, fits, pieces):
         nrows = len(fits)
         ncols = len(self.triangles) + len(pieces)
-        m = np.zeros((nrows, ncols), dtype=DTYPE_FOR_ARRAY)
+        m = np.zeros((nrows, ncols), dtype=ec.io.DTYPE_FOR_ARRAY)
         for i, x in enumerate(fits):
             # here j refers to the piece
             j = len(self.triangles) + x[0]
@@ -218,8 +217,7 @@ point_group = PointGroup()
 class Piece:
     """Pieces described by a collection of triangles and a colour"""
 
-    def __init__(self, triangles, col):
-        self.original_triangles = triangles
+    def __init__(self, triangles, col="black"):
         self.col = col
 
         # Look at all rotations / reflections of piece
@@ -399,7 +397,6 @@ class Game:
                 return self.solve()
             # no solution
             raise ec.error.NoSolution
-            return Solution([], self)
         solution = Solution([sub[i] for i in sol], self)
 
         return solution
@@ -408,7 +405,7 @@ class Game:
         """Generate a random solvable puzzle"""
         not_solved = True
         while not_solved:
-            if rollable == True:
+            if rollable is True:
                 roll = self.dice.roll()
             else:
                 roll = random.sample(range(1, 49), k=7)
