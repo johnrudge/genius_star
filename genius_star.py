@@ -212,6 +212,9 @@ class Dice:
         return rollable
 
 
+point_group = PointGroup()
+
+
 class Piece:
     """Pieces described by a collection of triangles and a colour"""
 
@@ -220,20 +223,9 @@ class Piece:
         self.col = col
 
         # Look at all rotations / reflections of piece
-        # about centre of a triangle
-        set1 = []
-        for perm in permutations([0, 1, 2]):
-            set1.append(
-                [(t[perm[0]], t[perm[1]], t[perm[2]]) for t in self.original_triangles]
-            )
-
-        # Reflections about an edge of a triangle,
-        # goes from up-triangles to down-triangles
-        set2 = []
-        for trigs in set1:
-            set2.append([(1 - t[0], -t[2], -t[1]) for t in trigs])
-
-        all_triangles = set1 + set2
+        all_triangles = [
+            [point_group.apply(t, i) for t in triangles] for i in range(12)
+        ]
 
         # After reflections/ rotations shift origin so first triangle
         # near (0,0,0)
