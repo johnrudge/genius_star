@@ -3,6 +3,7 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 import exact_cover as ec
+from exact_cover.io import DTYPE_FOR_ARRAY
 
 # Unit vectors for the triangular grid
 a = np.array([0.0, -1.0])
@@ -110,7 +111,7 @@ class Board:
         n_pieces = fits[-1][0] + 1  # work out number of pieces from last of fits
         nrows = len(fits)
         ncols = len(self.triangles) + n_pieces
-        m = np.zeros((nrows, ncols), dtype=ec.io.DTYPE_FOR_ARRAY)
+        m = np.zeros((nrows, ncols), dtype=DTYPE_FOR_ARRAY)
         for i, fit in enumerate(fits):
             # here j refers to the piece
             j = len(self.triangles) + fit[0]
