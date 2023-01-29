@@ -6,7 +6,7 @@ This is a simple python solver for [The Genius Star](https://www.happypuzzle.co.
 
 ## Requirements
 
-The code requires python 3.8 or higher with the `numpy`, `matplotlib`, and `exact-cover` packages. The GUI requires the `nicegui` package.
+The code requires python 3.7 or higher with the `numpy`, `matplotlib`, and `exact-cover` packages. The GUI requires the `nicegui` package.
 
 ## Example usage
 

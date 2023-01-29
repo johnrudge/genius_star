@@ -97,13 +97,13 @@ class Board:
 
     def fits(self, pieces):
         """Work out where all pieces can fit on the board"""
-        return [
-            intersect
+        fits = [
+            self.intersection(piece, perm_idx, shift, piece_idx)
             for piece_idx, piece in enumerate(pieces)
             for perm_idx in range(piece.n_perms())
             for shift in self.shifts
-            if (intersect := self.intersection(piece, perm_idx, shift, piece_idx))
         ]
+        return [intersect for intersect in fits if intersect]
 
     def incidence_matrix(self, fits):
         """Convert fits information to a boolean incidence matrix"""
