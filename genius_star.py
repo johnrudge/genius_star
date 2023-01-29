@@ -86,18 +86,24 @@ class Board:
                 shifts.append((t[0] - 1, t[1], t[2]))
         self.shifts = list(set(shifts))
 
+    def intersection(self, piece, perm_idx, shift, piece_idx=None):
+        """Work out how an individual piece intersects the board"""
+        trigs = set(piece.triangles(perm_idx, shift))
+        d = trigs.difference(self.triangles)
+        if len(d) == 0:
+            trig_idxs = [self.trig_dict[t] for t in trigs]
+            return (piece_idx, trig_idxs)
+        return None
+
     def fits(self, pieces):
-        """Work out where each piece can fit on the board"""
-        f = []
-        for piece_idx, p in enumerate(pieces):
-            for perm_idx in range(len(p.all_triangles)):
-                for shift in self.shifts:
-                    trigs = set(p.triangles(perm_idx, shift))
-                    d = trigs.difference(self.triangles)
-                    if len(d) == 0:
-                        trig_idxs = [self.trig_dict[t] for t in trigs]
-                        f.append((piece_idx, trig_idxs, perm_idx, trigs))
-        return f
+        """Work out where all pieces can fit on the board"""
+        return [
+            intersect
+            for piece_idx, piece in enumerate(pieces)
+            for perm_idx in range(len(piece.all_triangles))
+            for shift in self.shifts
+            if (intersect := self.intersection(piece, perm_idx, shift, piece_idx))
+        ]
 
     def matrix(self, fits, pieces):
         nrows = len(fits)
@@ -445,7 +451,8 @@ class Solution:
 
         for s in self.solution:
             f = self.game.fits[s]
-            piece_idx, trigs = f[0], f[3]
+            piece_idx, trig_idx = f[0], f[1]
+            trigs = [self.game.board.triangles[i] for i in trig_idx]
             col = self.game.pieces[piece_idx].col
             plot_block(trigs, col)
 
