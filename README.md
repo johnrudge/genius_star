@@ -2,11 +2,11 @@
 
 [Run the solver now!](https://geniusstar.johnrudge.com)
 
-This is a simple python solver for [The Genius Star](https://www.happypuzzle.co.uk/word-maths-and-shape-games/the-genius-star), a tiling puzzle made by the Happy Puzzle Company. The game involves tiling a star-shaped grid of triangles with a set of irregular pieces. Seven dice are rolled to indicate certain triangles which are blocked, and the other pieces must be fitted around these blocks. The tiling problem can be cast as an [exact cover problem](https://en.wikipedia.org/wiki/Exact_cover) and the code here uses the python [exact-cover package](https://github.com/jwg4/exact_cover) to do the solving.
+This is a simple python solver for [The Genius Star](https://www.happypuzzle.co.uk/word-maths-and-shape-games/the-genius-star), a tiling puzzle made by the Happy Puzzle Company. The game involves tiling a star-shaped grid of triangles with a set of [polyiamond](https://en.wikipedia.org/wiki/Polyiamond) pieces. Seven dice are rolled to indicate certain triangles which are blocked, and the other pieces must be fitted around these blocks. The tiling problem can be cast as an [exact cover problem](https://en.wikipedia.org/wiki/Exact_cover) and the code here uses the python [exact-cover package](https://github.com/jwg4/exact_cover) to do the solving. A good introduction to the theory behind the solver algorithm can be found in [Donald Knuth's paper](https://arxiv.org/abs/cs/0011047v1).
 
 ## Requirements
 
-The code requires python 3 with the `numpy`, `matplotlib`, and `exact-cover` packages. The GUI requires the `nicegui` package.
+The code requires python 3.8 or higher with the `numpy`, `matplotlib`, and `exact-cover` packages. The GUI requires the `nicegui` package.
 
 ## Example usage
 
