@@ -11,7 +11,7 @@ c = np.array([np.sqrt(3.0) / 2.0, 0.5])
 
 
 def triangle_coords(t):
-    """Given a triangular coordinate triplet t, return the triangle vertices"""
+    """Given a triangular coordinate triplet t, return the Cartesian vertices"""
     centre = a * t[0] + b * t[1] + c * t[2]
     if sum(t) % 2 == 1:
         aa = centre + a
@@ -100,35 +100,36 @@ class Board:
         return [
             intersect
             for piece_idx, piece in enumerate(pieces)
-            for perm_idx in range(len(piece.all_triangles))
+            for perm_idx in range(piece.n_perms())
             for shift in self.shifts
             if (intersect := self.intersection(piece, perm_idx, shift, piece_idx))
         ]
 
-    def matrix(self, fits, pieces):
+    def incidence_matrix(self, fits):
+        """Convert fits information to a boolean incidence matrix"""
+        n_pieces = fits[-1][0] + 1  # work out number of pieces from last of fits
         nrows = len(fits)
-        ncols = len(self.triangles) + len(pieces)
+        ncols = len(self.triangles) + n_pieces
         m = np.zeros((nrows, ncols), dtype=ec.io.DTYPE_FOR_ARRAY)
-        for i, x in enumerate(fits):
+        for i, fit in enumerate(fits):
             # here j refers to the piece
-            j = len(self.triangles) + x[0]
+            j = len(self.triangles) + fit[0]
             m[i, j] = 1
-            for j in x[1]:
+            for j in fit[1]:
                 # here j refers to the triangle
                 m[i, j] = 1
         return m
 
     def covered(self, matrix):
+        """List of fits which cover the individual triangles."""
         return [set(np.nonzero(matrix[:, i])[0]) for i, t in enumerate(self.triangles)]
 
     def calculate_equivalence(self):
         """matrix giving positions equivalent under point group"""
-        trig_dict = {t: i for i, t in enumerate(self.triangles)}
-
         equi = np.empty((48, 12), dtype=int)
         for i, t in enumerate(self.triangles):
             ts = self.point_group.apply_all(t)
-            equi[i, :] = [trig_dict[c] for c in ts]
+            equi[i, :] = [self.trig_dict[c] for c in ts]
         self.equivalence = equi
 
     def equivalent_rolls(self, roll):
@@ -341,10 +342,8 @@ class Game:
         self.original_fits = self.board.fits(self.original_pieces)
         self.star_fits = self.board.fits(self.star_pieces)
 
-        self.original_matrix = self.board.matrix(
-            self.original_fits, self.original_pieces
-        )
-        self.star_matrix = self.board.matrix(self.star_fits, self.star_pieces)
+        self.original_matrix = self.board.incidence_matrix(self.original_fits)
+        self.star_matrix = self.board.incidence_matrix(self.star_fits)
 
         self.original_covered = self.board.covered(self.original_matrix)
         self.star_covered = self.board.covered(self.star_matrix)
@@ -368,18 +367,22 @@ class Game:
             self.covered = self.original_covered
 
     def masks(self):
-        killer_set = set.union(*[self.covered[i - 1] for i in self.roll])
-        row_mask = np.zeros(self.matrix.shape[0], dtype=bool)
-        row_mask[list(killer_set)] = True
-
+        """Boolean arrays showing which rows and columns of the board
+        incidence matrix need to be removed given the blocker positions"""
+        # columns to block are just correspond to the roll
         col_mask = np.zeros(self.matrix.shape[1], dtype=bool)
         col_mask[np.array(self.roll) - 1] = True
+
+        # rows to block are those whose fits cover the blocked triangles
+        blocked_set = set.union(*[self.covered[i - 1] for i in self.roll])
+        row_mask = np.zeros(self.matrix.shape[0], dtype=bool)
+        row_mask[list(blocked_set)] = True
+
         return ~row_mask, ~col_mask
 
     def incidence_matrix(self):
-        """The incidence matrix corresponding to the fits f"""
+        """The incidence matrix corresponding to this game"""
         row_mask, col_mask = self.masks()
-
         ixgrid = np.ix_(row_mask, col_mask)
         return self.matrix[ixgrid]
 
@@ -418,7 +421,7 @@ class Game:
                 roll.sort()
             self.new_roll(roll)
             try:
-                solution = self.solve()
+                self.solve()
             except ec.error.NoSolution:
                 continue
             if star and not self.star:
