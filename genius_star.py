@@ -502,7 +502,7 @@ def gui(run=True):
             game = Game()
             roll = Roll(dice.roll(sort=False))
 
-            fig = ui.plot(figsize=(3.0, 3.0))
+            fig = ui.plot(figsize=(3.0, 3.0), close=False)
             fig.classes("max-w-xs")
 
             def update():
