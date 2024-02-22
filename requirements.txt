@@ -1,6 +1,6 @@
 ###### Required python packages ######
 numpy
 matplotlib
-exact-cover
+xcover
 nicegui
 
