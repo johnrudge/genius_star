@@ -392,6 +392,11 @@ class Game:
         plt.figure(figsize=(5, 8))
         plt.spy(m, aspect="auto")
 
+    def n_solutions(self):
+        """Number of possible solutions"""
+        m = self.incidence_matrix()
+        return sum(1 for _ in covers_bool(m))
+
     def solutions(self):
         """Generator that yields all solutions"""
         m = self.incidence_matrix()

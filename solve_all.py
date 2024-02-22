@@ -1,7 +1,6 @@
 from itertools import combinations
 import numpy as np
 from genius_star import Dice, Game, NoSolution
-import exact_cover as ec
 
 
 def naive_solution_count():
