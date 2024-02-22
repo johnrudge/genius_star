@@ -2,7 +2,7 @@ from itertools import product
 import random
 import matplotlib.pyplot as plt
 import numpy as np
-import exact_cover as ec
+from xcover import covers_bool
 
 # Unit vectors for the triangular grid
 a = np.array([0.0, -1.0])
@@ -392,22 +392,31 @@ class Game:
         plt.figure(figsize=(5, 8))
         plt.spy(m, aspect="auto")
 
+    def solutions(self):
+        """Generator that yields all solutions"""
+        m = self.incidence_matrix()
+        row_mask, _ = self.masks()
+        sub = np.nonzero(row_mask)[0]
+        for cover in covers_bool(m):
+            yield Solution([sub[i] for i in cover], self)
+
     def solve(self):
         """Solve game using an exact cover problem solver"""
         m = self.incidence_matrix()
         row_mask, _ = self.masks()
         sub = np.nonzero(row_mask)[0]
+        solutions = self.solutions()
+
         try:
-            sol = ec.get_exact_cover(m)
-        except ec.error.NoSolution:
+            solution = next(solutions)
+        except StopIteration:
             if self.star:
                 # no star solution, try solving without star
                 self.new_roll(self.roll, star=False)
                 return self.solve()
-            # no solution
-            raise ec.error.NoSolution
-        solution = Solution([sub[i] for i in sol], self)
-
+            else:
+                # no solution at all
+                raise NoSolution
         return solution
 
     def random(self, star=True, rollable=False):
@@ -422,7 +431,7 @@ class Game:
             self.new_roll(roll)
             try:
                 self.solve()
-            except ec.error.NoSolution:
+            except NoSolution:
                 continue
             if star and not self.star:
                 continue
@@ -440,6 +449,10 @@ class Game:
 
         if show:
             plt.show()
+
+
+class NoSolution(Exception):
+    pass
 
 
 class Solution:
@@ -487,7 +500,6 @@ def gui(run=True):
 
     @ui.page("/", title="The Genius Star Solver")
     def page():
-
         ui.add_head_html(
             """
             <meta name="viewport" content="width=device-width, initial-scale=1" />

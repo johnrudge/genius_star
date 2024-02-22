@@ -1,6 +1,6 @@
 from itertools import combinations
 import numpy as np
-from genius_star import Dice, Game
+from genius_star import Dice, Game, NoSolution
 import exact_cover as ec
 
 
@@ -64,7 +64,7 @@ def solution_count(rolls):
         game.new_roll(roll, star=True)
         try:
             solution = game.solve()
-        except ec.error.NoSolution:
+        except NoSolution:
             unique_nosolution_games += 1
             nosolution_games += 1
             nosolution_seen.add(roll)
