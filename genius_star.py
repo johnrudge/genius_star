@@ -2,7 +2,6 @@ from itertools import product
 import random
 import matplotlib.pyplot as plt
 import numpy as np
-from xcover import covers_bool
 
 # Unit vectors for the triangular grid
 a = np.array([0.0, -1.0])
@@ -395,33 +394,54 @@ class Game:
     def n_solutions(self):
         """Number of possible solutions"""
         m = self.incidence_matrix()
-        return sum(1 for _ in covers_bool(m))
+        nsols = sum(1 for _ in covers_bool(m))
+        if self.star is False:
+            nsols = nsols // 2  # avoid double counting on two length 3 pieces
+        return nsols
 
     def solutions(self):
         """Generator that yields all solutions"""
+        from xcover import covers_bool
+
         m = self.incidence_matrix()
         row_mask, _ = self.masks()
         sub = np.nonzero(row_mask)[0]
         for cover in covers_bool(m):
             yield Solution([sub[i] for i in cover], self)
 
-    def solve(self):
+    def solve(self, solver="xcover"):
         """Solve game using an exact cover problem solver"""
-        m = self.incidence_matrix()
-        row_mask, _ = self.masks()
-        sub = np.nonzero(row_mask)[0]
-        solutions = self.solutions()
 
-        try:
-            solution = next(solutions)
-        except StopIteration:
-            if self.star:
-                # no star solution, try solving without star
-                self.new_roll(self.roll, star=False)
-                return self.solve()
-            else:
-                # no solution at all
-                raise NoSolution
+        if solver == "xcover":
+            solutions = self.solutions()
+            try:
+                solution = next(solutions)
+            except StopIteration:
+                if self.star:
+                    # no star solution, try solving without star
+                    self.new_roll(self.roll, star=False)
+                    return self.solve(solver=solver)
+                else:
+                    # no solution at all
+                    raise NoSolution
+        elif solver == "exact_cover":
+            import exact_cover
+
+            m = self.incidence_matrix()
+            row_mask, _ = self.masks()
+            sub = np.nonzero(row_mask)[0]
+
+            try:
+                sol = exact_cover.get_exact_cover(m)
+            except exact_cover.error.NoSolution:
+                if self.star:
+                    # no star solution, try solving without star
+                    self.new_roll(self.roll, star=False)
+                    return self.solve(solver=solver)
+                else:
+                    # no solution
+                    raise exact_cover.error.NoSolution
+            solution = Solution([sub[i] for i in sol], self)
         return solution
 
     def random(self, star=True, rollable=False):

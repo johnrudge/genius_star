@@ -2,6 +2,8 @@ from itertools import combinations
 import numpy as np
 from genius_star import Dice, Game, NoSolution
 
+solver = "exact_cover"  # alternative is "xcover"
+
 
 def naive_solution_count():
     dice = Dice()
@@ -11,7 +13,7 @@ def naive_solution_count():
 
     for i, roll in enumerate(dice.all_rolls()):
         game.new_roll(roll, star=True)
-        solution = game.solve()
+        solution = game.solve(solver)
 
         if solution.game.star == True:
             star_games += 1
@@ -62,7 +64,7 @@ def solution_count(rolls):
 
         game.new_roll(roll, star=True)
         try:
-            solution = game.solve()
+            solution = game.solve(solver)
         except NoSolution:
             unique_nosolution_games += 1
             nosolution_games += 1
