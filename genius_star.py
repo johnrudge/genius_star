@@ -393,6 +393,8 @@ class Game:
 
     def n_solutions(self):
         """Number of possible solutions"""
+        from xcover import covers_bool
+        
         m = self.incidence_matrix()
         nsols = sum(1 for _ in covers_bool(m))
         if self.star is False:
