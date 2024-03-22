@@ -65,7 +65,7 @@ def solution_count(rolls):
         game.new_roll(roll, star=True)
         try:
             solution = game.solve(solver)
-        except NoSolution:
+        except:
             unique_nosolution_games += 1
             nosolution_games += 1
             nosolution_seen.add(roll)
